@@ -193,7 +193,8 @@ describe('ClassroomNavigationLinksComponent', () => {
   });
 
   it('should not load classroom summaries if currentUrl is signup', fakeAsync(() => {
-    component['windowRef'].nativeWindow.location.pathname = '/signup';
+    const windowRef = TestBed.inject(WindowRef) as WindowRef;
+    windowRef.nativeWindow.location.pathname = '/signup';
 
     component.ngOnInit();
     tick();
