@@ -21,7 +21,10 @@ from core.domain import classroom_config_services
 from core.domain import exp_domain
 from core.domain import exp_fetchers
 from core.domain import exp_services
+from core.domain import question_services
+from core.domain import skill_services
 from core.domain import topic_fetchers
+from core.domain import translation_domain
 from core.platform import models
 from core.tests import test_utils
 
@@ -477,5 +480,59 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
                     'id': 'topic_id',
                     'version': 1,
                     'payload': topic.to_dict()
+                }]
+            )
+
+    def test_get_question_returns_correct_json(self) -> None:
+        question_id = question_services.get_new_question_id()
+        content_id_generator = translation_domain.ContentIdGenerator()
+        question = self.save_new_question(
+            question_id, 'owner_id',
+            self._create_valid_question_data(
+                'Test Question', content_id_generator), ['skill_1'],
+            content_id_generator.next_content_id_index)
+
+        with self.secrets_swap:
+            self.assertEqual(
+                self.get_json(
+                    '/android_data?activity_type=question&'
+                    'activities_data=[{"id": "%s", "version": 1}]' 
+                    % question_id,
+                    headers={'X-ApiKey': 'secret'},
+                    expected_status_int=200
+                ),
+                [{
+                    'id': question_id,
+                    'version': 1,
+                    'payload': question.to_dict()
+                }]
+            )
+
+    def test_get_question_skill_link_returns_correct_json(self) -> None:
+        question_id = question_services.get_new_question_id()
+        content_id_generator = translation_domain.ContentIdGenerator()
+        skill_id = skill_services.get_new_skill_id()
+        self.save_new_question(
+            question_id, 'owner_id',
+            self._create_valid_question_data(
+                'Test Question', content_id_generator), [skill_id],
+                content_id_generator.next_content_id_index)
+        question_services.create_new_question_skill_link(
+            'owner_id', question_id, skill_id, 0.1
+        )
+
+        with self.secrets_swap:
+            self.assertEqual(
+                self.get_json(
+                    '/android_data?activity_type=question_skill_link&'
+                    'activities_data=[{"id": "%s"}]' % skill_id,
+                    headers={'X-ApiKey': 'secret'},
+                    expected_status_int=200
+                ),
+                [{
+                    'id': skill_id,
+                    'payload': {
+                        'question_ids': [question_id],
+                    }
                 }]
             )

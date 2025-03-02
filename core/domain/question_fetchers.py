@@ -24,8 +24,7 @@ from core import feconf
 from core.domain import question_domain
 from core.domain import state_domain
 from core.platform import models
-
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 MYPY = False
 if MYPY: # pragma: no cover
@@ -201,3 +200,57 @@ def migrate_state_schema(
         state_schema_version += 1
 
     return next_content_id_index
+
+
+def get_multiple_questions_by_ids_and_version(
+    question_ids_and_versions: List[Tuple[str, Optional[int]]]
+) -> List[Optional[question_domain.Question]]:
+    """Returns a list of domain objects representing questions.
+
+    Args:
+        question_ids_and_versions: list(tuple(str, int|None)). List of
+            question ids and versions.
+
+    Returns:
+        list(Question|None). A list of domain objects representing questions
+        with the given ids or None when the id is not valid.
+    """
+    question_model_list = question_models.QuestionModel.get_version_multi(
+        question_ids_and_versions)
+    return [
+        get_question_from_model(model) if model is not None else None
+        for model in question_model_list
+    ]
+
+
+def get_question_ids_by_skill_ids(
+    skill_ids: List[str],
+    question_count: int = 100,
+    offset: int = 0
+) -> Dict[str, List[str]]:
+    """Returns a mapping of skill IDs to their corresponding question IDs.
+
+    Args:
+        skill_ids: list(str). List of skill IDs to get questions for.
+        question_count: int. Maximum number of questions to fetch per skill.
+            Defaults to 100.
+        offset: int. Offset to start fetching questions from. Defaults to 0.
+
+    Returns:
+        dict(str, list(str)). A mapping of skill IDs to lists of question IDs.
+    """
+    question_skill_link_models = (
+        question_models.QuestionSkillLinkModel
+        .get_question_skill_links_by_skill_ids(
+            question_count=question_count,
+            skill_ids=skill_ids,
+            offset=offset))
+
+    return {
+        skill_id: [
+            question_skill_link.question_id
+            for question_skill_link in question_skill_link_models
+            if question_skill_link.skill_id == skill_id
+        ]
+        for skill_id in skill_ids
+    }

@@ -1497,6 +1497,73 @@ class VersionedModel(BaseModel):
             raise e
 
     @classmethod
+    def get_version_multi(
+        cls: Type[SELF_VERSIONED_MODEL],
+        entity_ids_and_versions: List[Tuple[str, Optional[int]]]
+    ) -> List[Optional[SELF_VERSIONED_MODEL]]:
+        """Gets multiple model instances by their IDs and versions.
+
+        Args:
+            entity_ids_and_versions: list(tuple(str, int|None)). List of tuples
+                containing entity ID and version number. If version number is
+                None, the latest version will be returned.
+
+        Returns:
+            list(VersionedModel|None). List of model instances corresponding to
+            the given IDs and versions. If a model does not exist, the
+            corresponding entry will be None.
+        """
+        # Get all unique entity IDs to check for deletion.
+        entity_ids = list(
+            {entity_id for (entity_id, _) in entity_ids_and_versions})
+        current_version_models = cls.get_multi(
+            entity_ids, include_deleted=False)
+
+        # Map entity IDs to their latest versions.
+        latest_versions_by_id = {
+            model.id: model.version
+            for model in current_version_models
+            if model is not None
+        }
+
+        # Prepare placeholders for results.
+        results = [None] * len(entity_ids_and_versions)
+        valid_snapshot_ids = []
+        valid_indices = []
+
+        # Build list of snapshot IDs while preserving order.
+        for idx, (entity_id, version_number) in enumerate(
+            entity_ids_and_versions):
+            if entity_id not in latest_versions_by_id:
+                results[idx] = None
+            else:
+                version = (
+                    version_number if version_number is not None
+                    else latest_versions_by_id[entity_id])
+                snapshot_id = cls.get_snapshot_id(entity_id, version)
+                valid_snapshot_ids.append(snapshot_id)
+                valid_indices.append(idx)
+
+        # Fetch snapshot models for valid snapshot IDs.
+        snapshot_models = cls.SNAPSHOT_CONTENT_CLASS.get_multi(
+            valid_snapshot_ids)
+
+        # Reconstitute models from snapshots at their proper positions.
+        for idx, snapshot_model in zip(valid_indices, snapshot_models):
+            entity_id, version_number = entity_ids_and_versions[idx]
+            if snapshot_model is None:
+                results[idx] = None
+            else:
+                version = (
+                    version_number if version_number is not None
+                    else latest_versions_by_id[entity_id])
+                model = cls(id=entity_id, version=version)
+                results[idx] = model._reconstitute(
+                    snapshot_model.content
+                )
+        return results
+
+    @classmethod
     def get_multi_versions(
         cls: Type[SELF_VERSIONED_MODEL],
         entity_id: str,
