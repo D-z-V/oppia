@@ -26,6 +26,7 @@ from core.domain import classroom_config_services
 from core.domain import classroom_domain
 from core.domain import exp_domain
 from core.domain import exp_fetchers
+from core.domain import question_domain
 from core.domain import question_fetchers
 from core.domain import skill_domain
 from core.domain import skill_fetchers
@@ -37,7 +38,11 @@ from core.domain import topic_domain
 from core.domain import topic_fetchers
 from core.domain import translation_fetchers
 
-from typing import Dict, List, Optional, TypedDict, Union
+from typing import Any, Dict, List, Optional, Sequence, TypedDict, Union
+
+MYPY = False
+if MYPY: # pragma: no cover
+    from mypy_imports import translation_models
 
 
 class InitializeAndroidTestDataHandler(
@@ -103,8 +108,10 @@ class _ActivityDataResponseDictRequiredFields(TypedDict):
         subtopic_page_domain.SubtopicPageDict,
         classroom_config_domain.ClassroomDict,
         topic_domain.TopicDict,
+        question_domain.QuestionDict,
         Dict[str, feconf.TranslatedContentDict],
         classroom_domain.ClassroomDict,
+        Dict[str, List[str]],
         None
     ]
 
@@ -214,15 +221,16 @@ class AndroidActivityHandler(base.BaseHandler[
                         'Version cannot be specified for question_skill_link')
             skill_ids = [
                 activity_data['id'] for activity_data in activities_data]
-            question_ids_skill_id = (
+            question_ids_by_skill_id = (
                 question_fetchers.get_question_ids_by_skill_ids(
                 skill_ids))
-            activities.extend([{
-                'id': skill_id,
-                'payload': {
-                    'question_ids': question_ids
-                }
-            } for skill_id, question_ids in question_ids_skill_id.items()])
+            for skill_id, question_ids in question_ids_by_skill_id.items():
+                activities.append({
+                    'id': skill_id,
+                    'payload': {
+                        'question_ids': question_ids
+                    }
+                })
 
         elif activity_type == constants.ACTIVITY_TYPE_CLASSROOM:
             for activity_data in activities_data:
@@ -241,14 +249,8 @@ class AndroidActivityHandler(base.BaseHandler[
         elif activity_type == constants.ACTIVITY_TYPE_EXPLORATION_TRANSLATIONS:
             # Translations require both version and language code, and use a
             # different payload structure than other activities.
-            translation_references = [{
-                'entity_type': feconf.TranslatableEntityType(
-                    feconf.ENTITY_TYPE_EXPLORATION),
-                'entity_id': activity_data['id'],
-                'entity_version': activity_data.get('version'),
-                'language_code': activity_data.get('language_code'),
-            } for activity_data in activities_data]
-
+            translation_references: List[
+                translation_models.EntityTranslationReferenceDict] = []
             for activity_data in activities_data:
                 version = activity_data.get('version')
                 language_code = activity_data.get('language_code')
@@ -257,19 +259,30 @@ class AndroidActivityHandler(base.BaseHandler[
                         'Version and language code must be specified '
                         'for translation'
                     )
+                translation_references.append({
+                    'entity_type': feconf.TranslatableEntityType(
+                        feconf.ENTITY_TYPE_EXPLORATION),
+                    'entity_id': activity_data['id'],
+                    'entity_version': version,
+                    'language_code': language_code,
+                })
 
             translations = (
                 translation_fetchers.get_multiple_entity_translations(
                     translation_references))
-            activities.extend([{
-                'id': activity_data['id'],
-                'version': activity_data['version'],
-                'language_code': activity_data['language_code'],
-                'payload': (
-                    translation.to_dict()['translations']
-                    if translation is not None else None)
-            } for activity_data, translation in zip(
-                activities_data, translations)])
+
+            for activity_data, translation in zip(
+                activities_data, translations):
+                lang_code = activity_data.get('language_code')
+                if lang_code is not None:
+                    activities.append({
+                        'id': activity_data['id'],
+                        'version': activity_data.get('version'),
+                        'language_code': lang_code,
+                        'payload': (
+                            translation.to_dict()['translations']
+                            if translation is not None else None)
+                    })
 
         else:
             # All other activities are standard versioned models
@@ -279,33 +292,41 @@ class AndroidActivityHandler(base.BaseHandler[
                 (activity_data['id'], activity_data.get('version'))
                 for activity_data in activities_data]
 
+            fetched_entities: Sequence[Optional[Union[
+                exp_domain.Exploration,
+                story_domain.Story,
+                skill_domain.Skill,
+                question_domain.Question,
+                topic_domain.Topic
+            ]]] = []
+
             if activity_type == constants.ACTIVITY_TYPE_EXPLORATION:
-                fetched_activities = (
+                fetched_entities = (
                     exp_fetchers.get_multiple_explorations_by_ids_and_version(
                         ids_and_versions))
             elif activity_type == constants.ACTIVITY_TYPE_STORY:
-                fetched_activities = (
+                fetched_entities = (
                     story_fetchers.get_multiple_stories_by_ids_and_version(
                         ids_and_versions))
             elif activity_type == constants.ACTIVITY_TYPE_SKILL:
-                fetched_activities = (
+                fetched_entities = (
                     skill_fetchers.get_multiple_skills_by_ids_and_version(
                         ids_and_versions))
             elif activity_type == 'question':
-                fetched_activities = (
+                fetched_entities = (
                     question_fetchers.get_multiple_questions_by_ids_and_version(
                         ids_and_versions))
             else:
-                fetched_activities = (
+                fetched_entities = (
                     topic_fetchers.get_multiple_topics_by_ids_and_version(
                         ids_and_versions))
 
-            activities.extend([{
-                'id': activity_data['id'],
-                'version': activity_data.get('version'),
-                'payload': (
-                    activity.to_dict() if activity is not None else None)
-            } for activity_data, activity in zip(
-                activities_data, fetched_activities)])
+            for activity_data, entity in zip(activities_data, fetched_entities):
+                response_dict: ActivityDataResponseDict = {
+                    'id': activity_data['id'],
+                    'version': activity_data.get('version'),
+                    'payload': entity.to_dict() if entity is not None else None
+                }
+                activities.append(response_dict)
 
         self.render_json(activities)

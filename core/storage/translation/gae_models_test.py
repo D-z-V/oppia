@@ -382,10 +382,16 @@ class EntityTranslationsModelTest(test_utils.GenericTestBase):
         ])
 
         self.assertEqual(len(results), 2)
+
+        self.assertIsNotNone(results[0])
+        assert results[0] is not None
         self.assertEqual(results[0].entity_version, 1)
         self.assertEqual(
             results[0].translations['content']['content_value'],
             'Original Translation')
+
+        self.assertIsNotNone(results[1])
+        assert results[1] is not None
         self.assertEqual(results[1].entity_version, 2)
         self.assertEqual(
             results[1].translations['content']['content_value'],

@@ -295,8 +295,8 @@ class EntityTranslationFetchersTests(test_utils.GenericTestBase):
             'exploration', exp_id, 1, 'hi',
             {
                 'content': {
-                    'data_format': 'html',
-                    'translation': 'Translation',
+                    'content_format': 'html',
+                    'content_value': 'Translation',
                     'needs_update': False
                 }
             }
@@ -322,8 +322,8 @@ class EntityTranslationFetchersTests(test_utils.GenericTestBase):
             'exploration', exp_id, 1, 'hi',
             {
                 'content': {
-                    'data_format': 'html',
-                    'translation': 'Translation',
+                    'content_format': 'html',
+                    'content_value': 'Translation',
                     'needs_update': False
                 }
             }

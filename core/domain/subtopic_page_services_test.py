@@ -594,7 +594,6 @@ class SubtopicPageServicesUnitTests(test_utils.GenericTestBase):
         subtopic_page_1 = (
             subtopic_page_domain.SubtopicPage.create_default_subtopic_page(
             1, topic_id))
-        subtopic_page_1.page_contents.html = '<p>Original Content 1</p>'
         subtopic_page_services.save_subtopic_page(
             self.user_id, subtopic_page_1, 'Create subtopic page 1',
             [topic_domain.TopicChange({
@@ -607,7 +606,6 @@ class SubtopicPageServicesUnitTests(test_utils.GenericTestBase):
         subtopic_page_2 = (
             subtopic_page_domain.SubtopicPage.create_default_subtopic_page(
             2, topic_id))
-        subtopic_page_2.page_contents.html = '<p>Original Content 2</p>'
         subtopic_page_services.save_subtopic_page(
             self.user_id, subtopic_page_2, 'Create subtopic page 2',
             [topic_domain.TopicChange({
@@ -618,7 +616,6 @@ class SubtopicPageServicesUnitTests(test_utils.GenericTestBase):
             })])
 
         updated_page_1 = copy.deepcopy(subtopic_page_1)
-        updated_page_1.page_contents.html = '<p>Updated Content 1</p>'
         subtopic_page_services.save_subtopic_page(
             self.user_id, updated_page_1, 'Update subtopic page 1',
             [subtopic_page_domain.SubtopicPageChange({
