@@ -38,7 +38,7 @@ from core.domain import topic_domain
 from core.domain import topic_fetchers
 from core.domain import translation_fetchers
 
-from typing import Any, Dict, List, Optional, Sequence, TypedDict, Union
+from typing import Dict, List, Optional, Sequence, TypedDict, Union
 
 MYPY = False
 if MYPY: # pragma: no cover
