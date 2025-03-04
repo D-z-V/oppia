@@ -502,7 +502,7 @@ class ExplorationRetrievalTests(test_utils.GenericTestBase):
         self.assertEqual(len(results), 1)
         self.assertIsNone(results[0])
 
-    def test_get_multiple_explorations_by_ids_and_version_empty_list(
+    def test_get_multiple_explorations_by_empty_ids_and_version_list(
         self
     ) -> None:
         """Test fetching with empty list of IDs."""

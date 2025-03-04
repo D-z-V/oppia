@@ -196,8 +196,8 @@ class AndroidActivityHandler(base.BaseHandler[
                 (activity_data['id'].split('-'), activity_data.get('version'))
                 for activity_data in activities_data]
             topic_subtopic_version_tuples = [
-                (topic_id, int(subtopic_index), version)
-                for ((topic_id, subtopic_index), version)
+                (topic_id, int(subtopic_index), subtopic_page_version)
+                for ((topic_id, subtopic_index), subtopic_page_version)
                 in split_ids_and_versions]
             subtopic_pages = (
                 subtopic_page_services.get_subtopic_pages_with_ids_and_versions(
@@ -250,39 +250,32 @@ class AndroidActivityHandler(base.BaseHandler[
             # Translations require both version and language code, and use a
             # different payload structure than other activities.
             translation_references: List[
-                translation_models.EntityTranslationReferenceDict] = []
-            for activity_data in activities_data:
-                version = activity_data.get('version')
-                language_code = activity_data.get('language_code')
-                if version is None or language_code is None:
-                    raise self.InvalidInputException(
-                        'Version and language code must be specified '
-                        'for translation'
-                    )
-                translation_references.append({
+                translation_models.EntityTranslationReferenceDict] = [{
                     'entity_type': feconf.TranslatableEntityType(
                         feconf.ENTITY_TYPE_EXPLORATION),
                     'entity_id': activity_data['id'],
-                    'entity_version': version,
-                    'language_code': language_code,
-                })
+                    'entity_version': activity_data.get('version'),
+                    'language_code': activity_data.get('language_code')
+                }
+                for activity_data in activities_data
+            ]
 
             translations = (
                 translation_fetchers.get_multiple_entity_translations(
                     translation_references))
 
-            for activity_data, translation in zip(
-                activities_data, translations):
-                lang_code = activity_data.get('language_code')
-                if lang_code is not None:
-                    activities.append({
-                        'id': activity_data['id'],
-                        'version': activity_data.get('version'),
-                        'language_code': lang_code,
-                        'payload': (
-                            translation.to_dict()['translations']
-                            if translation is not None else None)
-                    })
+            activities.extend([
+                {
+                    'id': activity_data['id'],
+                    'version': activity_data.get('version'),
+                    'language_code': activity_data.get('language_code'),
+                    'payload': (
+                        translation.to_dict()['translations']
+                        if translation is not None else None
+                    )
+                }
+                for activity_data, translation in zip(activities_data, translations)
+            ])
 
         else:
             # All other activities are standard versioned models

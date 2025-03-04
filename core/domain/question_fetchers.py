@@ -248,9 +248,9 @@ def get_question_ids_by_skill_ids(
 
     return {
         skill_id: [
-            question_skill_link.question_id
-            for question_skill_link in question_skill_link_models
-            if question_skill_link.skill_id == skill_id
+            question_skill_link_model.question_id
+            for question_skill_link_model in question_skill_link_models
+            if question_skill_link_model.skill_id == skill_id
         ]
         for skill_id in skill_ids
     }
