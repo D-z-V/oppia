@@ -254,8 +254,8 @@ class AndroidActivityHandler(base.BaseHandler[
                     'entity_type': feconf.TranslatableEntityType(
                         feconf.ENTITY_TYPE_EXPLORATION),
                     'entity_id': activity_data['id'],
-                    'entity_version': activity_data.get('version'),
-                    'language_code': activity_data.get('language_code')
+                    'entity_version': activity_data['version'],
+                    'language_code': activity_data['language_code']
                 }
                 for activity_data in activities_data
             ]
@@ -267,15 +267,15 @@ class AndroidActivityHandler(base.BaseHandler[
             activities.extend([
                 {
                     'id': activity_data['id'],
-                    'version': activity_data.get('version'),
-                    'language_code': activity_data.get('language_code'),
+                    'version': activity_data['version'],
+                    'language_code': activity_data['language_code'],
                     'payload': (
                         translation.to_dict()['translations']
                         if translation is not None else None
                     )
                 }
-                for activity_data, translation in zip(activities_data, 
-                                                      translations)
+                for activity_data, translation in zip(
+                    activities_data, translations)
             ])
 
         else:

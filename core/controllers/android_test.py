@@ -664,7 +664,7 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
                     expected_status_int=200
                 ),
                 [
-                    {'id': 'exp_id', 'version': 1, 
+                    {'id': 'exp_id', 'version': 1,
                      'payload': exploration.to_dict()},
                     {'id': 'nonexistent_exp', 'version': 1, 'payload': None}
                 ]
@@ -680,7 +680,8 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
                     expected_status_int=200
                 ),
                 [
-                    {'id': 'story_id', 'version': 1, 'payload': story.to_dict()},
+                    {'id': 'story_id', 'version': 1,
+                     'payload': story.to_dict()},
                     {'id': 'nonexistent_story', 'version': 1, 'payload': None}
                 ]
             )
