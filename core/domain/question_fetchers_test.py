@@ -19,6 +19,8 @@
 from __future__ import annotations
 
 from core import feconf
+from core import utils
+from core.constants import constants
 from core.domain import question_domain
 from core.domain import question_fetchers
 from core.domain import question_services
@@ -279,3 +281,14 @@ class QuestionFetchersUnitTests(test_utils.GenericTestBase):
         result = question_fetchers.get_question_ids_by_skill_ids(
             ['nonexistent_skill'], question_count=10, offset=0)
         self.assertEqual(result, {'nonexistent_skill': []})
+
+    def test_get_question_ids_by_skill_ids_exceeds_limit(self) -> None:
+        with self.assertRaisesRegex(
+            utils.InvalidInputException,
+            'question_count exceeds maximum allowed value of %d' %
+            constants.SKILL_QUESTION_LIMIT
+        ):
+            question_fetchers.get_question_ids_by_skill_ids(
+                ['skill_1'],
+                question_count=constants.SKILL_QUESTION_LIMIT + 1,
+                offset=0)

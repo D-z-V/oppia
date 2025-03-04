@@ -223,7 +223,7 @@ class AndroidActivityHandler(base.BaseHandler[
                 activity_data['id'] for activity_data in activities_data]
             question_ids_by_skill_id = (
                 question_fetchers.get_question_ids_by_skill_ids(
-                skill_ids))
+                skill_ids, question_count=100))
             for skill_id, question_ids in question_ids_by_skill_id.items():
                 activities.append({
                     'id': skill_id,
@@ -274,7 +274,8 @@ class AndroidActivityHandler(base.BaseHandler[
                         if translation is not None else None
                     )
                 }
-                for activity_data, translation in zip(activities_data, translations)
+                for activity_data, translation in zip(activities_data, 
+                                                      translations)
             ])
 
         else:

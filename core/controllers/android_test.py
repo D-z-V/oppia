@@ -510,7 +510,7 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
             )
 
     def test_get_question_skill_link_with_version_fails(self) -> None:
-        """Test that requesting question_skill_link with version parameter fails."""
+        """Test requesting question_skill_link with version parameter fails."""
         with self.secrets_swap:
             self.assertEqual(
                 self.get_json(
@@ -522,8 +522,10 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
                 'Version cannot be specified for question_skill_link'
             )
 
-    def test_get_nonexistent_question_skill_link_returns_empty_list(self) -> None:
-        """Test that requesting nonexistent skill returns empty question list."""
+    def test_get_nonexistent_question_skill_link_returns_empty_list(
+            self
+    ) -> None:
+        """Test requesting nonexistent skill returns empty question list."""
         with self.secrets_swap:
             self.assertEqual(
                 self.get_json(
@@ -541,12 +543,13 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
             )
 
     def test_get_nonexistent_topic_returns_null_payload(self) -> None:
-        """Test that requesting nonexistent topic returns null payload."""
+        """Test requesting nonexistent topic returns null payload."""
         with self.secrets_swap:
             self.assertEqual(
                 self.get_json(
                     '/android_data?activity_type=learntopic&'
-                    'activities_data=[{"id": "nonexistent_topic_id", "version": 1}]',
+                    'activities_data='
+                    '[{"id": "nonexistent_topic_id", "version": 1}]',
                     headers={'X-ApiKey': 'secret'},
                     expected_status_int=200
                 ),
@@ -558,7 +561,7 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
             )
 
     def test_get_nonexistent_classroom_returns_null_payload(self) -> None:
-        """Test that requesting nonexistent classroom returns null payload."""
+        """Test requesting nonexistent classroom returns null payload."""
         with self.secrets_swap:
             self.assertEqual(
                 self.get_json(
@@ -574,12 +577,13 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
             )
 
     def test_get_nonexistent_question_returns_null_payload(self) -> None:
-        """Test that requesting nonexistent question returns null payload."""
+        """Test requesting nonexistent question returns null payload."""
         with self.secrets_swap:
             self.assertEqual(
                 self.get_json(
                     '/android_data?activity_type=question&'
-                    'activities_data=[{"id": "nonexistent_question_id", "version": 1}]',
+                    'activities_data='
+                    '[{"id": "nonexistent_question_id", "version": 1}]',
                     headers={'X-ApiKey': 'secret'},
                     expected_status_int=200
                 ),
@@ -591,7 +595,7 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
             )
 
     def test_get_nonexistent_subtopic_returns_null_payload(self) -> None:
-        """Test that requesting nonexistent subtopic returns null payload."""
+        """Test requesting nonexistent subtopic returns null payload."""
         with self.secrets_swap:
             self.assertEqual(
                 self.get_json(
@@ -608,12 +612,13 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
             )
 
     def test_get_nonexistent_skill_returns_null_payload(self) -> None:
-        """Test that requesting nonexistent skill returns null payload."""
+        """Test requesting nonexistent skill returns null payload."""
         with self.secrets_swap:
             self.assertEqual(
                 self.get_json(
                     '/android_data?activity_type=skill&'
-                    'activities_data=[{"id": "nonexistent_skill_id", "version": 1}]',
+                    'activities_data='
+                    '[{"id": "nonexistent_skill_id", "version": 1}]',
                     headers={'X-ApiKey': 'secret'},
                     expected_status_int=200
                 ),
@@ -625,12 +630,14 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
             )
 
     def test_get_nonexistent_translation_returns_null_payload(self) -> None:
-        """Test that requesting nonexistent translation returns null payload."""
+        """Test requesting nonexistent translation returns null payload."""
         with self.secrets_swap:
             self.assertEqual(
                 self.get_json(
                     '/android_data?activity_type=exp_translations&'
-                    'activities_data=[{"id": "nonexistent_id", "version": 1, "language_code": "es"}]',
+                    'activities_data='
+                    '[{"id": "nonexistent_id", "version": 1,'
+                    '"language_code": "es"}]',
                     headers={'X-ApiKey': 'secret'},
                     expected_status_int=200
                 ),
@@ -643,30 +650,32 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
             )
 
     def test_multiple_different_activities_handling(self) -> None:
-        """Test that multiple different activities can be requested correctly."""
+        """Test multiple different activities can be requested correctly."""
         exploration = self.save_new_default_exploration('exp_id', 'owner_id')
         story = self.save_new_story('story_id', 'user_id', 'Title')
-        
+
         with self.secrets_swap:
-            # Request multiple exploration activities
             self.assertEqual(
                 self.get_json(
                     '/android_data?activity_type=exploration&'
-                    'activities_data=[{"id": "exp_id", "version": 1}, {"id": "nonexistent_exp", "version": 1}]',
+                    'activities_data=[{"id": "exp_id", "version": 1},' 
+                    '{"id": "nonexistent_exp", "version": 1}]',
                     headers={'X-ApiKey': 'secret'},
                     expected_status_int=200
                 ),
                 [
-                    {'id': 'exp_id', 'version': 1, 'payload': exploration.to_dict()},
+                    {'id': 'exp_id', 'version': 1, 
+                     'payload': exploration.to_dict()},
                     {'id': 'nonexistent_exp', 'version': 1, 'payload': None}
                 ]
             )
-            
-            # Request multiple story activities
+
             self.assertEqual(
                 self.get_json(
                     '/android_data?activity_type=story&'
-                    'activities_data=[{"id": "story_id", "version": 1}, {"id": "nonexistent_story", "version": 1}]',
+                    'activities_data='
+                    '[{"id": "story_id", "version": 1},'
+                    '{"id": "nonexistent_story", "version": 1}]',
                     headers={'X-ApiKey': 'secret'},
                     expected_status_int=200
                 ),
@@ -677,20 +686,24 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
             )
 
     def test_get_multiple_subtopics_at_once(self) -> None:
-        """Test that multiple subtopics can be requested at once."""
+        """Test multiple subtopics can be requested at once."""
         subtopic1 = self.save_new_subtopic(1, 'user_id', 'topic_id')
         subtopic2 = self.save_new_subtopic(2, 'user_id', 'topic_id')
-        
+
         with self.secrets_swap:
             self.assertEqual(
                 self.get_json(
                     '/android_data?activity_type=subtopic&'
-                    'activities_data=[{"id": "topic_id-1", "version": 1}, {"id": "topic_id-2", "version": 1}]',
+                    'activities_data='
+                    '[{"id": "topic_id-1", "version": 1},'
+                    '{"id": "topic_id-2", "version": 1}]',
                     headers={'X-ApiKey': 'secret'},
                     expected_status_int=200
                 ),
                 [
-                    {'id': 'topic_id-1', 'version': 1, 'payload': subtopic1.to_dict()},
-                    {'id': 'topic_id-2', 'version': 1, 'payload': subtopic2.to_dict()}
+                    {'id': 'topic_id-1', 'version': 1,
+                     'payload': subtopic1.to_dict()},
+                    {'id': 'topic_id-2', 'version': 1,
+                     'payload': subtopic2.to_dict()}
                 ]
             )

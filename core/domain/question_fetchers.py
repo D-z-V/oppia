@@ -21,6 +21,8 @@ from __future__ import annotations
 import copy
 
 from core import feconf
+from core import utils
+from core.constants import constants
 from core.domain import question_domain
 from core.domain import state_domain
 from core.platform import models
@@ -238,7 +240,16 @@ def get_question_ids_by_skill_ids(
 
     Returns:
         dict(str, list(str)). A mapping of skill IDs to lists of question IDs.
+
+    Raises:
+        InvalidInputException. 
+            If question_count exceeds the maximum allowed value.
     """
+    if question_count > constants.SKILL_QUESTION_LIMIT:
+        raise utils.InvalidInputException(
+            'question_count exceeds maximum allowed value of %d' %
+            constants.SKILL_QUESTION_LIMIT)
+
     question_skill_link_models = (
         question_models.QuestionSkillLinkModel
         .get_question_skill_links_by_skill_ids(
@@ -248,9 +259,9 @@ def get_question_ids_by_skill_ids(
 
     return {
         skill_id: [
-            question_skill_link_model.question_id
-            for question_skill_link_model in question_skill_link_models
-            if question_skill_link_model.skill_id == skill_id
+            qsl_model.question_id
+            for qsl_model in question_skill_link_models
+            if qsl_model.skill_id == skill_id
         ]
         for skill_id in skill_ids
     }
