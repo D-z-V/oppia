@@ -708,3 +708,30 @@ class AndroidActivityHandlerTests(test_utils.GenericTestBase):
                      'payload': subtopic2.to_dict()}
                 ]
             )
+
+    def test_get_exploration_translations_missing_language_code(self) -> None:
+        """Test missing language code for translations returns an error."""
+        with self.secrets_swap:
+            self.assertEqual(
+                self.get_json(
+                    '/android_data?activity_type=exp_translations&'
+                    'activities_data=[{"id": "translation_id", "version": 1}]',
+                    headers={'X-ApiKey': 'secret'},
+                    expected_status_int=400
+                )['error'],
+                'Version and language code must be specified for translation'
+            )
+
+    def test_get_exploration_translations_missing_version(self) -> None:
+        """Test missing version for translations returns an error."""
+        with self.secrets_swap:
+            self.assertEqual(
+                self.get_json(
+                    '/android_data?activity_type=exp_translations&'
+                    'activities_data='
+                    '[{"id": "translation_id", "language_code": "es"}]',
+                    headers={'X-ApiKey': 'secret'},
+                    expected_status_int=400
+                )['error'],
+                'Version and language code must be specified for translation'
+            )
